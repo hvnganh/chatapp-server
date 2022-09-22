@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken")
 
 let refreshTokens = [];
+
 const authController = {
     // register
     registerUser: async (req, res) => {
@@ -41,7 +42,7 @@ const authController = {
             admin: user.admin,   
         },
         process.env.JWT_REFRESH_KEY,
-        {expiresIn: "365d"}
+        { expiresIn: "365d" }
         )
     },
     // Login
@@ -72,7 +73,7 @@ const authController = {
                     secure: false
                 })
                 const {password, ...others} = user._doc;
-                res.status(200).json({...others, accessToken})
+                res.status(200).json({...others, accessToken, refreshToken })
             }
             
         } catch (error) {
@@ -99,20 +100,20 @@ const authController = {
             const newAccessToken = authController.generateAccessToken(user);
             const newRefreshToken = authController.generateRefreshToken(user);
             refreshTokens.push(newRefreshToken)
-            res.cookie("refreshToken", newRefreshToken, {
+            res.cookie("refreshToken", refreshToken, {
                 httpOnly: true,
                 path: "/",
                 sameSite: "strict",
                 secure: false
             })
-            res.status(200).json({accessToken: newAccessToken});
+            res.status(200).json({accessToken: newAccessToken, refreshToken: newRefreshToken});
         })
     },
 
     // Logout
     userLogout: async(req, res) => {
         res.clearCookie("refreshToken");
-        refreshTokens = refreshTokens.filter(token => token !== req.cookies.refreshToken);
+        refreshTokens = refreshTokens.filter(token => token !== req.body.token);
         res.status(200).json("Logged out!")
     }
 }
